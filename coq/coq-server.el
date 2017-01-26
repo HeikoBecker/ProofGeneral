@@ -73,11 +73,13 @@ is gone and we have to close the secondary locked span."
 
 ;; retract to particular state id, get Status, optionally get Goal
 (defun coq-server--send-retraction (state-id &optional get-goal)
-  (setq coq-server--pending-edit-at-state-id state-id)
-  (proof-server-send-to-prover (coq-xml-edit-at state-id))
-  (when get-goal
-    (proof-server-send-to-prover (coq-xml-goal)))
-  (proof-server-send-to-prover (coq-xml-status)))
+  (if (equal state-id coq-current-state-id)
+      (message "NOT RETRACTING TO CURRENT STATE ID")
+    (setq coq-server--pending-edit-at-state-id state-id)
+    (proof-server-send-to-prover (coq-xml-edit-at state-id))
+    (when get-goal
+      (proof-server-send-to-prover (coq-xml-goal)))
+    (proof-server-send-to-prover (coq-xml-status))))
 
 (defun coq-server--clear-response-buffer ()
   (coq--display-response "")
