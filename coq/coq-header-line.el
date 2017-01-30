@@ -234,6 +234,7 @@ columns in header line, NUM-COLS is number of its columns."
     (if (null proof-script-buffer)
 	(coq-header-line-clear-all)
       (with-current-buffer proof-script-buffer
+	(message "HEADER LINE UPDATE?: %s" (coq-header-line--need-update))
 	;; see if we need to update anything
 	(condition-case err-msg
 	    (when (coq-header-line--need-update)
@@ -328,8 +329,10 @@ columns in header line, NUM-COLS is number of its columns."
 		  (message "All proof terms checked by the kernel"))
 		(setq coq-last-incomplete-count incomplete-count)
 		(setq coq-last-processed-count processed-count)
+		(message "VANILLA COUNT: %s PROCESSED COUNT: %s" vanilla-count processed-count)
 		;; update mode line indicators
 		(when (consp mode-line-format)
+		  (message "UPDATING STATUS LINE")
 		  (let ((filtered-fmt (cl-remove-if 'coq-header--mode-line-filter
 						    mode-line-format)))
 		    (let ((processing-pct
