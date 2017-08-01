@@ -141,7 +141,7 @@ these also have a non-nil value for this variable.")
 
 
 (deflocal proof-sent-span nil
-  "The span indicating what part of the script has been sent to the 
+  "The span indicating what part of the script has been sent to the
 prover.")
 
 (deflocal proof-queue-span nil
@@ -158,7 +158,7 @@ scripting buffer may have an active queue span.")
 
 ;; global variable
 (defvar proof-locked-secondary-span nil
-  "If there's an edit within the locked span, that may result in two locked regions, 
+  "If there's an edit within the locked span, that may result in two locked regions,
 with the focus between them. This span represents the second such region.")
 
 ;; ** Getters and setters
@@ -173,7 +173,7 @@ Optional argument ARGS is ignored."
   "Make SPAN read-only, following variable `proof-strict-read-only' or ALWAYS."
   (if (or always (not (memq proof-strict-read-only '(nil retract))))
       (span-read-only span)
-    (span-write-warning 
+    (span-write-warning
      span
      (if (eq proof-strict-read-only 'retract)
 	 'proof-retract-before-change
@@ -207,7 +207,7 @@ Action is taken on all script buffers."
 (defun proof-set-overlay-arrow (pos)
   "Set the position of the overlay marker to POS."
   (and (markerp proof-overlay-arrow)
-       (let ((skip-chars '(32 9 10)) ; ASCII space, tab, newline 
+       (let ((skip-chars '(32 9 10)) ; ASCII space, tab, newline
 	     (ch (char-after pos))
 	     (bof (point-min))
 	     (eof (point-max)))
@@ -264,9 +264,10 @@ Action is taken on all script buffers."
 	 (bof (point-min))
 	 (eof (point-max)))
     (while (and (< pos eof)
-		(memq ch skip-chars))
+		(not (memq ch skip-chars)))
       (cl-incf pos)
       (setq ch (char-after pos)))
+    (print pos)
     ;; include following processed comments
     (let ((check-end (proof-queue-or-locked-end)))
       (when (>= check-end pos)
@@ -714,7 +715,7 @@ It is recorded in the span with the 'rawname property."
     (span-set-property span 'name name)
     (span-set-property span 'rawname rawname)
     (span-add-delete-action span delfn)
-    
+
     ;; Ideally: would keep invisible property to be the idiom type
     ;; (span-set-property span 'invisible idiom)
     ;; BUT: problems overlapping invisible regions with
@@ -739,8 +740,8 @@ and `buffer-invisibility-spec'."
   (let* ((invisible-prop  (pg-invisible-prop (span-property span 'idiom)))
 	 (invisible-rest  (remq invisible-prop
 				(span-property span 'invisible))))
-    (span-set-property span 'invisible 
-		       (if invisiblep 
+    (span-set-property span 'invisible
+		       (if invisiblep
 			   (cons invisible-prop invisible-rest)
 			 invisible-rest))))
 
@@ -776,8 +777,8 @@ IDIOMSYM is a symbol and ID is a strings."
    (list
     (intern
      (completing-read
-      (concat "Make " 
-	      (if current-prefix-arg "in" "") 
+      (concat "Make "
+	      (if current-prefix-arg "in" "")
 	      "visible all regions of: ")
       (apply 'vector pg-idioms) nil t))
     current-prefix-arg))
@@ -859,7 +860,7 @@ This is used to annotate the buffer with the result of proof steps."
       (if (and (> (length text) 0)
 	       (string= (substring text -1) "\n"))
 	  (setq text (substring text 0 -1)))
-      
+
       text)))
 
 
@@ -1200,7 +1201,7 @@ the `kill-buffer-hook' for scripting buffers, so that when
 a scripting buffer is killed it is always retracted."
   (interactive)
   (proof-debug-message "proof-deactivate-scripting!")
-  (proof-with-current-buffer-if-exists 
+  (proof-with-current-buffer-if-exists
    proof-script-buffer
    ;; Examine buffer.
 
@@ -1219,7 +1220,7 @@ a scripting buffer is killed it is always retracted."
 
      (if action
 	 (proof-protected-process-or-retract action))
-     
+
      (unless (and (not complete) (not action))
 
        ;; If we get here, then the locked region is (now) either
@@ -1257,7 +1258,7 @@ a scripting buffer is killed it is always retracted."
        ;; Turn off Scripting indicator here.
        (setq proof-active-buffer-fake-minor-mode nil)
        (force-mode-line-update)
-       
+
        ;; Finally, run hooks
        (run-hooks 'proof-deactivate-scripting-hook)))))
 
@@ -1268,7 +1269,7 @@ a scripting buffer is killed it is always retracted."
       (proof-ready-prover queuemode)
     (error (setq proof-script-buffer nil)
 	   (signal (car err) (cdr err))))
-  
+
   ;; Initialise regions
   (if (proof-sent-region-empty-p) ; leave alone if non-empty
       (proof-init-segmentation))
@@ -1299,7 +1300,7 @@ a scripting buffer is killed it is always retracted."
 	      (eq 'interrupt proof-prover-last-output-kind))
       (proof-deactivate-scripting) ;; turn off again!
       ;; Give an error to prevent further actions.
-      (error 
+      (error
        "Scripting not activated because of error or interrupt"))))
 
 (defun proof-activate-scripting (&optional nosaves queuemode)
@@ -1423,7 +1424,7 @@ Argument SPAN has just been processed."
 	(comment-p (eq (span-property span 'type) 'comment)))
 
     ;; if merging primary, secondary locked regions,
-    ;; may have already extended locked region beyond the 
+    ;; may have already extended locked region beyond the
     ;; just-processed span's end
 
     (proof-set-locked-end end)
@@ -1467,7 +1468,7 @@ Argument SPAN has just been processed."
     (when (or (= (span-start span) 1)
 	      (proof-server-everything-sent))
       (proof-set-sent-end (span-end span)))
-    
+
     ;; possibly evaluate some arbitrary Elisp.  SECURITY RISK!
     (save-match-data
       (setq str (buffer-substring-no-properties (span-start span)
@@ -1510,7 +1511,7 @@ Argument SPAN has just been processed."
   "Parse the script buffer from end of queue/locked region to POS.
 This partitions the script buffer into contiguous regions, classifying
 them by type.  Return a list of lists of the form
-  
+
    (TYPE TEXT ENDPOS)
 
 where:
@@ -1739,8 +1740,8 @@ The optional QUEUEFLAGS are added to each queue item."
 		  (span-set-property span 'cmd cmd)
 		  (setq alist (cons qitem alist))))
 	    ;; ignored text
-	    (let ((qitem  
-		   (list span nil cb queueflags))) ; nil was `proof-no-command' 
+	    (let ((qitem
+		   (list span nil cb queueflags))) ; nil was `proof-no-command'
 	      (span-set-property span 'type 'comment)
 	      (setq alist (cons qitem alist)))))
 	(setq start end)))
@@ -1811,7 +1812,7 @@ try to avoid duplicating them in the buffer.
 When used in the locked region (and so with strict read only off), it
 always defaults to inserting a semi (nicer might be to parse for a
 comment, and insert or skip to the next semi)."
-  (let ((mrk         (point)) 
+  (let ((mrk         (point))
 	(termregexp  (regexp-quote proof-terminal-string))
 	ins nwsp)
     (if (< mrk (proof-unprocessed-begin))
@@ -1862,7 +1863,7 @@ This function expects the buffer to be activated for advancing."
     (proof-extend-queue lastpos vanillas)))
 
 (defun proof-retract-before-change (beg end)
-  "For `before-change-functions'.  When BEG and END within sent region, 
+  "For `before-change-functions'.  When BEG and END within sent region,
 retract to BEG unless BEG and END in comment."
   (when (and (<= end (proof-sent-end))
 	     (not (and (proof-inside-comment beg)
@@ -1967,7 +1968,7 @@ others)."
   ;; State of scripting may have changed now
   (run-hooks 'proof-state-change-hook))
 
-(defun proof-setup-retract-action (start end proof-commands remove-action &optional 
+(defun proof-setup-retract-action (start end proof-commands remove-action &optional
 					 displayflags)
   "Make span from START to END which corresponds to retraction.
 Returns retraction action destined for proof shell queue, and make span.
@@ -2013,7 +2014,7 @@ DISPLAYFLAGS control output shown to user, see `proof-action-list'."
 	(start (span-start target))
 	(span target)
 	actions)
-    
+
     ;; NB: first section only entered if proof-kill-goal-command is
     ;; non-nil.  Otherwise we expect proof-find-and-forget-fn to do
     ;; all relevent work for arbitrary retractions.  FIXME: clean up
@@ -2087,7 +2088,7 @@ If invoked outside the sent region, undo the last successfully processed
 command.  If called with a prefix argument (DELETE-REGION non-nil), also
 delete the retracted region from the proof-script."
   (interactive "P")
-  (proof-retract-until-point 
+  (proof-retract-until-point
    (if delete-region 'kill-region)))
 
 (defun proof-retract-until-point (&optional undo-action displayflags)
@@ -2097,8 +2098,8 @@ the sent region.  If invoked outside the sent region, undo
 the last successfully processed command.  See `proof-retract-target'.
 
 After retraction has succeeded in the prover, the filter will call
-`proof-done-retracting'.  If UNDO-ACTION is non-nil, it will 
-then be invoked on the region in the proof script corresponding to 
+`proof-done-retracting'.  If UNDO-ACTION is non-nil, it will
+then be invoked on the region in the proof script corresponding to
 the proof command sequence.
 DISPLAYFLAGS control output shown to user, see `proof-action-list'.
 
@@ -2110,7 +2111,7 @@ of effects:
 for scripting again which may involve retracting
 other (dependent) files.
 
-2. We may query the user whether to save some buffers.  
+2. We may query the user whether to save some buffers.
 
 Step 2 may seem odd -- we're undoing (in) the buffer, after all
 -- but what may happen is that when scripting starts going
@@ -2265,9 +2266,9 @@ mode features, but are only ever processed atomically by the proof
 assistant."
   (setq proof-script-buffer-file-name buffer-file-name)
 
-  (setq font-lock-defaults 
+  (setq font-lock-defaults
 	(list '(proof-script-font-lock-keywords)
-	      ;; see defadvice in proof-syntax 
+	      ;; see defadvice in proof-syntax
 	      (fboundp (proof-ass-sym font-lock-fontify-syntactically-region))))
 
   ;; Has buffer already been processed?
@@ -2488,7 +2489,7 @@ finish setup which depends on specific proof assistant configuration."
 
   ;; Invisibility management: show ellipsis
   (mapc (lambda (p)
-	  (add-to-invisibility-spec 
+	  (add-to-invisibility-spec
 	   (cons (pg-invisible-prop p) t)))
 	pg-all-idioms)
 
@@ -2581,7 +2582,7 @@ Stores recent results of `proof-segment-up-to' in reverse order.")
     (if (and
 	 proof-use-parser-cache      ;; safety off valve
 	 proof-segment-up-to-cache
-	 (>= (proof-queue-or-locked-end) 
+	 (>= (proof-queue-or-locked-end)
 	     proof-segment-up-to-cache-start)
 	 (setq res (proof-segment-cache-contents-for pos))
 	 ;; only use result if last edit point is >1 segment below
@@ -2605,7 +2606,7 @@ Stores recent results of `proof-segment-up-to' in reverse order.")
 
 (defun proof-segment-cache-contents-for (pos)
   ;; only return result if we have cache for complete region
-  (when (<= pos proof-segment-up-to-cache-end) 
+  (when (<= pos proof-segment-up-to-cache-end)
     (let ((semis   proof-segment-up-to-cache)
 	  (start  (proof-queue-or-locked-end))
 	  usedsemis semiend)
@@ -2614,7 +2615,7 @@ Stores recent results of `proof-segment-up-to' in reverse order.")
 	(if (> semiend start)
 	    (setq usedsemis (cons (car semis) usedsemis)))
 	(setq semis
-	      (if (or (< semiend pos) 
+	      (if (or (< semiend pos)
 		      ;; matches parsing-until-find-something behaviour
 		      (and (= semiend pos) (not usedsemis)))
 		  (cdr semis))))
